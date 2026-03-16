@@ -24,6 +24,7 @@ import {
   REVIEW_RESULT_OPTIONS,
   REVIEW_UPDATED_EVENT,
   SETTINGS_UPDATED_EVENT,
+  formatInterval,
   normalizeSettings,
   type AppSettings,
   type ReviewResult,
@@ -99,7 +100,6 @@ export function OverlayView() {
   const [reviewing, setReviewing] = useState<ReviewResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const settingsRef = useRef(DEFAULT_SETTINGS);
   const currentWordIdRef = useRef<string | null>(null);
   const dragCaptureRef = useRef(false);
@@ -132,7 +132,7 @@ export function OverlayView() {
 
     function reportSoftError(scope: string, error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error(`AmbientCard ${scope} failed:`, error);
+      console.error(`DeskVocab ${scope} failed:`, error);
 
       if (!mounted) {
         return;
@@ -313,7 +313,7 @@ export function OverlayView() {
           setSettings(nextSettings);
         });
       } catch (error) {
-        console.error("AmbientCard settings sync failed:", error);
+        console.error("DeskVocab settings sync failed:", error);
       }
     }
 
@@ -412,14 +412,6 @@ export function OverlayView() {
     await openSettingsWindow();
   }
 
-  function handleMouseEnter() {
-    setIsHovered(true);
-  }
-
-  function handleMouseLeave() {
-    setIsHovered(false);
-  }
-
   const accentHue = currentWord ? 26 + ((currentWord.word.length * 37) % 160) : 36;
   const overlayStyle = {
     "--card-opacity": String(settings.opacity),
@@ -427,7 +419,6 @@ export function OverlayView() {
     "--accent-hue": String(accentHue),
   } as CSSProperties;
 
-  // Empty state
   if (!studyData || !currentWord || !currentReviewState) {
     return (
       <main className="overlay-stage">
@@ -440,8 +431,17 @@ export function OverlayView() {
         >
           <div className="overlay-backdrop" />
           <div className="overlay-rim" />
-          <div className="overlay-word-empty">AmbientCard</div>
-          <div className="overlay-hint">右键打开设置，导入词库</div>
+          <div className="overlay-meta">
+            <span>DeskVocab</span>
+            <span>{formatInterval(settings.intervalMs)} · {Math.round(settings.opacity * 100)}%</span>
+          </div>
+          <div className="overlay-word">Import Words</div>
+          <div className="overlay-meaning">还没有可用词库</div>
+          <div className="overlay-actions overlay-actions-single">
+            <button className="overlay-action overlay-action-settings" onClick={() => void openSettingsWindow()} type="button">
+              打开设置
+            </button>
+          </div>
           {errorMessage ? <p className="overlay-diagnostic">{errorMessage}</p> : null}
         </section>
       </main>
@@ -453,50 +453,43 @@ export function OverlayView() {
       <section
         key={`${currentWord.id}-${currentReviewState.lastReviewedAt ?? "initial"}`}
         aria-live="polite"
-        className={`overlay-card overlay-card-draggable${dragging ? " overlay-card-dragging" : ""}${isHovered ? " overlay-card-hovered" : ""}`}
+        className={`overlay-card overlay-card-draggable${dragging ? " overlay-card-dragging" : ""}`}
         onContextMenu={(event) => void handleCardContextMenu(event)}
         onMouseDown={(event) => void handleCardMouseDown(event)}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
         style={overlayStyle}
-        title="左键拖动，右键打开设置，悬停显示详情"
+        title="左键拖动，右键打开设置"
       >
         <div className="overlay-backdrop" />
         <div className="overlay-rim" />
         <div className="overlay-progress" />
 
-        {/* Main word - always visible */}
-        <div className="overlay-word-wrapper">
-          <div className="overlay-word">{currentWord.word}</div>
+        <div className="overlay-meta">
+          <span>{studyData.usingCustomLibrary ? "CUSTOM LIBRARY" : "STARTER LIBRARY"}</span>
+          <span>{formatInterval(settings.intervalMs)} · {Math.round(settings.opacity * 100)}%</span>
         </div>
 
-        {/* Hover content - shows on mouse enter */}
-        <div className="overlay-hover-content">
-          {currentWord.phonetic ? <div className="overlay-phonetic">{currentWord.phonetic}</div> : null}
-          <div className="overlay-meaning">{currentWord.meaningZh}</div>
-          {currentWord.note ? <div className="overlay-note">{currentWord.note}</div> : null}
+        <div className="overlay-word">{currentWord.word}</div>
+        {currentWord.phonetic ? <div className="overlay-phonetic">{currentWord.phonetic}</div> : null}
+        <div className="overlay-meaning">{currentWord.meaningZh}</div>
 
-          <div className="overlay-divider" />
+        <div className="overlay-statusline">
+          <span>{getStageLabel(currentReviewState.stage)}</span>
+          <span>{formatDueLabel(currentReviewState.dueAt)}</span>
+        </div>
 
-          <div className="overlay-statusline">
-            <span>{getStageLabel(currentReviewState.stage)}</span>
-            <span>{formatDueLabel(currentReviewState.dueAt)}</span>
-          </div>
-
-          <div className="overlay-actions">
-            {REVIEW_RESULT_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                className={`overlay-action overlay-action-${option.value}`}
-                disabled={reviewing !== null}
-                onClick={() => void handleReview(option.value)}
-                title={option.caption.trim()}
-                type="button"
-              >
-                {reviewing === option.value ? "..." : option.label}
-              </button>
-            ))}
-          </div>
+        <div className="overlay-actions">
+          {REVIEW_RESULT_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              className={`overlay-action overlay-action-${option.value}`}
+              disabled={reviewing !== null}
+              onClick={() => void handleReview(option.value)}
+              title={option.caption.trim()}
+              type="button"
+            >
+              {reviewing === option.value ? "处理中..." : option.label}
+            </button>
+          ))}
         </div>
 
         {errorMessage ? <p className="overlay-diagnostic">{errorMessage}</p> : null}
