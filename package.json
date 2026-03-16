@@ -1,8 +1,8 @@
 {
-  "name": "deskvocab",
+  "name": "ambientcard",
   "private": true,
   "version": "0.1.0",
-  "description": "Ambient desktop vocabulary cards for Windows",
+  "description": "AmbientCard (知栖) - Ambient knowledge cards for desktop",
   "type": "module",
   "scripts": {
     "dev": "vite",

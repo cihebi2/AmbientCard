@@ -9,7 +9,7 @@ fn open_settings_window(app: AppHandle) -> Result<(), String> {
     }
 
     WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("/settings.html".into()))
-        .title("DeskVocab - Ambient Settings")
+        .title("AmbientCard Settings")
         .inner_size(1120.0, 760.0)
         .min_inner_size(940.0, 680.0)
         .center()
