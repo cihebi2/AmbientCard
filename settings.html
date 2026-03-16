@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeskVocab Settings</title>
+  </head>
+  <body>
+    <div id="root">
+      <section
+        style="
+          min-height: 100vh;
+          display: grid;
+          place-items: center;
+          padding: 24px;
+          background:
+            radial-gradient(circle at top, rgba(217, 171, 94, 0.18), transparent 42%),
+            linear-gradient(180deg, #fbf7ef 0%, #f3ecdf 100%);
+          color: #3e2b17;
+          font-family: 'Segoe UI', sans-serif;
+        "
+      >
+        <div style="max-width: 560px">
+          <div
+            style="
+              font-size: 12px;
+              letter-spacing: 0.28em;
+              text-transform: uppercase;
+              opacity: 0.68;
+            "
+          >
+            DeskVocab / Ambient Settings
+          </div>
+          <h1
+            style="
+              margin: 14px 0 10px;
+              font-size: 42px;
+              line-height: 1.05;
+              font-family: 'Georgia', serif;
+              font-weight: 700;
+            "
+          >
+            设置页加载中
+          </h1>
+          <p style="margin: 0; font-size: 15px; line-height: 1.7; opacity: 0.82">
+            如果这个提示长时间不消失，说明设置页初始化失败。关闭窗口后重新打开，或者查看控制台错误信息。
+          </p>
+        </div>
+      </section>
+    </div>
+    <script type="module" src="/src/settings.tsx"></script>
+  </body>
+</html>

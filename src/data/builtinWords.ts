@@ -1,0 +1,28 @@
+import type { WordCard } from "../types";
+
+export const BUILTIN_WORDS: WordCard[] = [
+  { id: "luminous", word: "luminous", phonetic: "/ˈluːmɪnəs/", meaningZh: "明亮的；清晰的", note: "Let the word feel like a soft light, not a test question." },
+  { id: "anchor", word: "anchor", phonetic: "/ˈæŋkər/", meaningZh: "锚；使固定", note: "A good word card should anchor attention for two seconds and leave." },
+  { id: "mend", word: "mend", phonetic: "/mend/", meaningZh: "修补；改善", note: "Tiny repairs, repeated often, beat one heroic cram session." },
+  { id: "gentle", word: "gentle", phonetic: "/ˈdʒentl/", meaningZh: "温和的；轻柔的", note: "The app should return words gently, never like a warning dialog." },
+  { id: "drift", word: "drift", phonetic: "/drɪft/", meaningZh: "漂移；逐渐移动", note: "Attention drifts. The card exists to catch it without fighting it." },
+  { id: "hinge", word: "hinge", phonetic: "/hɪndʒ/", meaningZh: "铰链；取决于", note: "Often the day hinges on a few repeated details." },
+  { id: "lucid", word: "lucid", phonetic: "/ˈluːsɪd/", meaningZh: "清晰的；易懂的", note: "Lucid design makes the word readable at first glance." },
+  { id: "harbor", word: "harbor", phonetic: "/ˈhɑːrbər/", meaningZh: "港湾；怀有", note: "Keep a quiet harbor on the right side of the desktop." },
+  { id: "vivid", word: "vivid", phonetic: "/ˈvɪvɪd/", meaningZh: "生动的；鲜明的", note: "One vivid card is easier to remember than ten gray panels." },
+  { id: "recall", word: "recall", phonetic: "/rɪˈkɔːl/", meaningZh: "回想起；召回", note: "This app is built for ambient recall, not forced drilling." },
+  { id: "nuance", word: "nuance", phonetic: "/ˈnuːɑːns/", meaningZh: "细微差别", note: "Nuance lives in typography, timing, and the way opacity breathes." },
+  { id: "steady", word: "steady", phonetic: "/ˈstedi/", meaningZh: "稳定的；稳固的", note: "A steady cadence matters more than feature count in the MVP." },
+  { id: "spare", word: "spare", phonetic: "/sper/", meaningZh: "额外的；节省", note: "Spare motion keeps a resident utility elegant." },
+  { id: "absorb", word: "absorb", phonetic: "/əbˈzɔːrb/", meaningZh: "吸收；理解", note: "Desk learning works because the user absorbs without switching context." },
+  { id: "wander", word: "wander", phonetic: "/ˈwɑːndər/", meaningZh: "漫游；走神", note: "When the eyes wander, the card should already be waiting nearby." },
+  { id: "kindle", word: "kindle", phonetic: "/ˈkɪndl/", meaningZh: "点燃；激发", note: "Repeated exposure kindles familiarity before confidence appears." },
+  { id: "carve", word: "carve", phonetic: "/kɑːrv/", meaningZh: "雕刻；切开", note: "Carve away noise until only the word and its meaning remain." },
+  { id: "ripple", word: "ripple", phonetic: "/ˈrɪpl/", meaningZh: "涟漪；扩散", note: "Small loops create ripple effects across memory." },
+  { id: "patient", word: "patient", phonetic: "/ˈpeɪʃnt/", meaningZh: "耐心的", note: "Ambient repetition works best when the interface is patient." },
+  { id: "hum", word: "hum", phonetic: "/hʌm/", meaningZh: "发出嗡嗡声", note: "The right background tool should hum, not shout." },
+  { id: "gather", word: "gather", phonetic: "/ˈɡæðər/", meaningZh: "聚集；收集", note: "Gather small moments of attention across the entire day." },
+  { id: "shelter", word: "shelter", phonetic: "/ˈʃeltər/", meaningZh: "庇护；遮蔽", note: "A translucent card should feel like shelter, not obstruction." },
+  { id: "temper", word: "temper", phonetic: "/ˈtempər/", meaningZh: "调节；缓和", note: "Tempered motion makes the desktop feel intentional." },
+  { id: "linger", word: "linger", phonetic: "/ˈlɪŋɡər/", meaningZh: "逗留；萦绕", note: "A good word should linger after the card has faded away." },
+];
