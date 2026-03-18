@@ -1,99 +1,114 @@
-# 知栖 · AmbientCard
+# AmbientCard · 知栖
 
-> 桌面环境化单词卡片。让单词在注意力的边缘自然逗留。
+> 面向 Windows 桌面的环境式知识卡片工具。让单词停留在视线边缘，而不是打断你的工作流。
 
 [![GitHub stars](https://img.shields.io/github/stars/cihebi2/AmbientCard?style=social)](https://github.com/cihebi2/AmbientCard/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/cihebi2/AmbientCard?style=social)](https://github.com/cihebi2/AmbientCard/network)
-[![Version](https://img.shields.io/badge/version-0.1.0-orange)](https://github.com/cihebi2/AmbientCard/releases)
+[![Version](https://img.shields.io/badge/version-0.2.0-orange)](https://github.com/cihebi2/AmbientCard/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=cihebi2/AmbientCard&type=Date)](https://star-history.com/#cihebi2/AmbientCard&Date)
-
-[English](./README.md) | [中文](#知栖)
+[English](./README.md) | [中文](./README.zh.md)
 
 ---
 
-## 知栖
+## 这是什么
 
-**知栖**（AmbientCard）是一款 Windows 桌面环境化单词学习工具。它不是弹窗通知，也不是沉重的学习平台，而是在桌面边缘显示半透明的单词卡片——温和、持久、当你的注意力漂移时，它总在那里。
+AmbientCard 是一个基于 Tauri 构建的 Windows 桌面应用。它会在桌面边缘显示小尺寸、半透明的学习卡片，用更轻的方式帮你做持续记忆强化。
 
-### 理念
+它不是：
 
-- **不是通知** —— 没有声音，没有跳动图标，没有紧迫感
-- **不是平台** —— 没有课程，没有进度条，没有压力
-- **只是环境** —— 单词安静地存在于你的环境中，当你瞥见时，它就在那里
+- 不是密集弹窗提醒
+- 不是重型学习平台
+- 不是强制专注软件
 
-> 💡 *学习单词的最佳时机，是你没有在刻意学习的时候。*
+它更像是：
 
-### 当前专注：单词学习
+- 一张安静待在桌面上的知识卡
+- 一种不打断工作的复习方式
+- 一套可以逐步扩展的“桌面闪现记忆”载体
 
-本项目目前**专注于单词学习**。我们相信先把一件事做好，再考虑扩展。
+当前产品重点仍然是英语单词，但整体模型已经在往“通用知识卡片”方向演进。
 
-| 状态 | 知识类型 | 说明 |
-|------|---------|------|
-| ✅ **进行中** | **单词** | 英文单词，含释义、音标、笔记 |
-| 📝 计划中 | 代码片段 | 常用语法速查 |
-| 📝 计划中 | 公式 | 数学物理常数 |
-| 📝 计划中 | 历史 | 关键日期与事件 |
-| 📝 计划中 | 短语 | 多语言表达 |
+## 发布说明
 
-### 功能
+### v0.2.0
 
-- 🪟 **半透明悬浮卡片**，浮于桌面之上
-- 📍 **位置预设**：右上 / 右中 / 右下，或直接拖拽
-- ⏱️ **可调轮播间隔**：10秒–3分钟
-- 🌓 **透明度控制**：25%–100%
-- 🔌 **系统托盘常驻**，支持开机自启
-- 📚 **内置起步词库** + CSV/TSV 导入 + ECDICT 开源词典
-- 🔄 **间隔重复算法**，三档评分：*忘了* / *模糊* / *认识*
-- 📊 **纯本地存储** —— 你的数据只存在于你的机器
+这一版把 AmbientCard 从演示原型推进到了可用版。
 
-### 技术栈
+- 桌面卡片收敛为更紧凑的小尺寸形态
+- 支持左键直接拖动卡片
+- 支持右键卡片直接打开设置
+- 设置窗口改成更接近原生软件的自定义标题栏样式
+- 加入 `忘了` / `模糊` / `认识` 三档复习反馈
+- 支持 CSV / TSV 导入词库
+- 支持一键导入 ECDICT mini 词库
+- 支持 `always` / `recall` / `test` 三种释义显示模式
+- 透明度、显示间隔、显示位置、启动行为可以实时同步
+- 托盘和设置窗口重开逻辑比前一版更稳定
 
-- Tauri 2 + Rust（后端）
-- React 19 + TypeScript 5.9（前端）
-- Tailwind CSS 4（样式）
-- Vite 7（构建）
+### 版本策略
 
-### 开发
+- 当前公开版本：`v0.2.0`
+- 后续如无额外说明，统一从 `v0.2.1` 开始继续发布
+
+## 当前功能
+
+- 半透明桌面悬浮卡片
+- 右上 / 右中 / 右下预设位置
+- 支持手动拖动定位
+- 卡片显示间隔可调
+- 卡片透明度可调
+- 本地化的轻量间隔复习
+- 自定义词库导入
+- 托盘常驻
+- 开机启动设置
+- 纯本地存储
+
+## 技术栈
+
+- Tauri 2
+- Rust
+- React 19
+- TypeScript 5.9
+- Tailwind CSS 4
+- Vite 7
+
+## 开发
 
 ```bash
 pnpm install
 pnpm tauri dev
 ```
 
-### 构建
+## 构建
 
 ```bash
 pnpm build
 pnpm tauri build
 ```
 
-### CSV 格式
-
-导入你自己的单词表：
+## 词库导入格式
 
 ```csv
 word,phonetic,meaning,note
-serendipity,/ˌserənˈdɪpəti/,意外发现珍奇事物的运气,这个词本身就是一次意外发现
-eloquent,/ˈeləkwənt/,雄辩的；有说服力的,想想马丁·路德·金
+serendipity,/ˌserənˈdɪpəti/,意外发现珍贵事物的运气,这个词本身就很有“幸运感”
+eloquent,/ˈeləkwənt/,有说服力的；善于表达的,可以联想到一段有力量的演讲
 ```
 
----
+## 后续方向
 
-## 为什么叫"知栖"？
+AmbientCard 不会只停留在“背单词卡片”。
 
-**知** —— 知识、知晓  
-**栖** —— 栖息、逗留
+后续可以扩展的卡片类型包括：
 
-知栖，意为**知识栖息之地**。我们不追求灌输，而是让知识像小鸟一样，安静地栖息在你的桌面角落，等待被你瞥见的那一刻。
+- 短语卡片
+- 公式卡片
+- 代码片段卡片
+- 历史知识卡片
+- 某个垂直领域的记忆卡片
 
 ---
 
 <p align="center">
-  <i>让知识逗留，而非打断。</i>
-</p>
-
-<p align="center">
-  <a href="https://github.com/cihebi2/AmbientCard">⭐ 在 GitHub 上给我们点星</a>
+  <i>让知识停留，而不是打断。</i>
 </p>
