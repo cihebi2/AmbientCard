@@ -28,6 +28,7 @@ import {
 } from "../lib/windowing";
 import {
   DEFAULT_SETTINGS,
+  DISPLAY_MODE_OPTIONS,
   LIBRARY_UPDATED_EVENT,
   INTERVAL_OPTIONS,
   POSITION_OPTIONS,
@@ -36,6 +37,7 @@ import {
   formatInterval,
   normalizeSettings,
   type AppSettings,
+  type DisplayMode,
   type OverlayPosition,
   type StudyData,
 } from "../types";
@@ -71,6 +73,7 @@ export function SettingsView() {
   const [overlayVisible, setOverlayVisible] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const lastAppliedRef = useRef(serializeSettings(DEFAULT_SETTINGS));
+  const appliedSettingsRef = useRef(DEFAULT_SETTINGS);
   const readyRef = useRef(false);
 
   const previewWord = useMemo(() => {
@@ -123,6 +126,7 @@ export function SettingsView() {
           setLoading(false);
         });
         lastAppliedRef.current = serializeSettings(loadedSettings);
+        appliedSettingsRef.current = loadedSettings;
         readyRef.current = true;
 
         unlistenFns.push(
@@ -139,6 +143,7 @@ export function SettingsView() {
           await settingsWindow.listen<AppSettings>(SETTINGS_UPDATED_EVENT, ({ payload }) => {
             const nextSettings = normalizeSettings(payload);
             lastAppliedRef.current = serializeSettings(nextSettings);
+            appliedSettingsRef.current = nextSettings;
 
             startTransition(() => {
               setDraft(nextSettings);
@@ -185,21 +190,40 @@ export function SettingsView() {
     setStatus("正在实时应用设置...");
 
     try {
-      if (nextSettings.autostartEnabled) {
-        await enable();
-      } else {
-        await disable();
+      let autostartWarning: string | null = null;
+      let settingsToPersist = nextSettings;
+      const previousSettings = appliedSettingsRef.current;
+
+      if (nextSettings.autostartEnabled !== previousSettings.autostartEnabled) {
+        try {
+          if (nextSettings.autostartEnabled) {
+            await enable();
+          } else {
+            await disable();
+          }
+        } catch (error) {
+          autostartWarning = `开机自启未更新：${getErrorMessage(error)}`;
+          settingsToPersist = normalizeSettings({
+            ...nextSettings,
+            autostartEnabled: previousSettings.autostartEnabled,
+          });
+        }
       }
 
-      const persisted = await saveAppSettings(nextSettings);
+      const persisted = await saveAppSettings(settingsToPersist);
       await broadcastSettings(persisted);
       lastAppliedRef.current = serializeSettings(persisted);
+      appliedSettingsRef.current = persisted;
 
       startTransition(() => {
         setDraft(persisted);
       });
 
-      setStatus("设置已实时生效。桌面卡片会立即同步。");
+      setStatus(
+        autostartWarning
+          ? `其他设置已保存。${autostartWarning}`
+          : "设置已实时生效。桌面卡片会立即同步。",
+      );
     } catch (error) {
       setStatus(`保存失败：${getErrorMessage(error)}`);
     } finally {
@@ -353,78 +377,99 @@ export function SettingsView() {
 
   if (fatalError) {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
+      <main className="settings-shell" style={{ background: "#0d0d0f" }}>
+        <div style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           padding: "24px",
-          background:
-            "radial-gradient(circle at top, rgba(125, 40, 40, 0.18), transparent 36%), linear-gradient(180deg, #fff8f4 0%, #f3e3d7 100%)",
-          color: "#482311",
-          fontFamily: "\"Segoe UI\", sans-serif",
-        }}
-      >
-        <section
-          style={{
-            maxWidth: "720px",
-            width: "100%",
-            border: "1px solid rgba(72, 35, 17, 0.14)",
-            borderRadius: "24px",
-            padding: "28px 30px",
-            background: "rgba(255,255,255,0.76)",
-            boxShadow: "0 18px 56px rgba(72, 35, 17, 0.12)",
-            backdropFilter: "blur(18px)",
-          }}
-        >
-          <div style={{ fontSize: "12px", letterSpacing: "0.24em", textTransform: "uppercase", opacity: 0.68 }}>
-            DeskVocab / settings bootstrap failed
-          </div>
-          <h1 style={{ margin: "12px 0 10px", font: "700 38px/1.05 Georgia, serif" }}>设置页启动失败</h1>
-          <p style={{ margin: "0 0 12px", fontSize: "15px", lineHeight: 1.7, opacity: 0.82 }}>
-            这说明设置页已经被加载到了，只是在初始化时发生了异常。
-          </p>
-          <pre
+        }}>
+          <section
             style={{
-              margin: 0,
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              padding: "14px 16px",
+              maxWidth: "720px",
+              width: "100%",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
               borderRadius: "16px",
-              background: "rgba(72,35,17,0.08)",
-              font: "13px/1.6 Consolas, 'Courier New', monospace",
+              padding: "28px 30px",
+              background: "rgba(20, 20, 24, 0.8)",
+              color: "rgba(255, 255, 255, 0.9)",
             }}
           >
-            {fatalError}
-          </pre>
-        </section>
+            <div style={{
+              fontSize: "11px",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "#ef4444",
+              fontWeight: 600,
+            }}>
+              AmbientCard / settings bootstrap failed
+            </div>
+            <h1 style={{
+              margin: "16px 0 12px",
+              fontSize: "28px",
+              fontWeight: 600,
+              color: "#ffffff",
+            }}>设置页启动失败</h1>
+            <p style={{
+              margin: "0 0 16px",
+              fontSize: "14px",
+              lineHeight: 1.7,
+              color: "rgba(255, 255, 255, 0.5)",
+            }}>
+              这说明设置页已经被加载到了，只是在初始化时发生了异常。
+            </p>
+            <pre
+              style={{
+                margin: 0,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                padding: "16px",
+                borderRadius: "10px",
+                background: "rgba(0, 0, 0, 0.4)",
+                font: "13px/1.6 Consolas, 'Courier New', monospace",
+                color: "#fca5a5",
+                border: "1px solid rgba(239, 68, 68, 0.1)",
+              }}
+            >
+              {fatalError}
+            </pre>
+          </section>
+        </div>
       </main>
     );
   }
 
   if (loading || !studyData) {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          padding: "24px",
-          background:
-            "radial-gradient(circle at top, rgba(217, 171, 94, 0.18), transparent 42%), linear-gradient(180deg, #fbf7ef 0%, #f3ecdf 100%)",
-          color: "#3e2b17",
-          fontFamily: "\"Segoe UI\", sans-serif",
-        }}
-      >
-        <div style={{ maxWidth: "560px" }}>
-          <div style={{ fontSize: "12px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.68 }}>
-            DeskVocab / Ambient Settings
+      <main className="settings-shell" style={{ background: "#0d0d0f" }}>
+        <div style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "rgba(255, 255, 255, 0.6)",
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{
+              width: "40px",
+              height: "40px",
+              border: "2px solid rgba(255, 255, 255, 0.1)",
+              borderTopColor: "#6366f1",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              margin: "0 auto 20px",
+            }} />
+            <div style={{ fontSize: "14px", fontWeight: 500 }}>设置页加载中...</div>
+            <div style={{ fontSize: "12px", opacity: 0.5, marginTop: "8px" }}>正在读取本地设置、词库和复习状态</div>
           </div>
-          <h1 style={{ margin: "14px 0 10px", font: "700 42px/1.05 Georgia, serif" }}>设置页加载中</h1>
-          <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.7, opacity: 0.82 }}>
-            正在读取本地设置、词库和复习状态。
-          </p>
         </div>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </main>
     );
   }
@@ -432,11 +477,11 @@ export function SettingsView() {
   return (
     <main className="settings-shell">
       <header className="settings-window-chrome">
-        <div className="settings-titlebar" data-tauri-drag-region>
+        <div className="settings-titlebar">
           <div className="settings-titlegroup" data-tauri-drag-region>
-            <div className="settings-titleicon" aria-hidden="true" />
-            <div className="settings-titletext">
-              <strong>DeskVocab</strong>
+            <div className="settings-titleicon" aria-hidden="true">D</div>
+            <div className="settings-titletext" data-tauri-drag-region>
+              <strong>AmbientCard</strong>
               <span>设置</span>
             </div>
           </div>
@@ -483,13 +528,16 @@ export function SettingsView() {
             词库
           </button>
           <button className="settings-menuitem" onClick={() => scrollToSettingsSection("settings-display")} type="button">
-            显示
+            启动
+          </button>
+          <button className="settings-menuitem" onClick={() => scrollToSettingsSection("settings-card-display")} type="button">
+            卡片
           </button>
           <button className="settings-menuitem" onClick={() => scrollToSettingsSection("settings-rhythm")} type="button">
             节奏
           </button>
           <button className="settings-menuitem" onClick={() => void handleReset()} type="button">
-            恢复默认
+            重置
           </button>
         </nav>
       </header>
@@ -497,7 +545,7 @@ export function SettingsView() {
       <div className="settings-app">
         <aside className="settings-sidebar">
           <section className="settings-sidebar-card settings-brand-card">
-            <div className="settings-app-kicker">DeskVocab</div>
+            <div className="settings-app-kicker">AmbientCard</div>
             <h1 className="settings-app-title">设置</h1>
             <p className="settings-app-copy">管理桌面卡片、词库导入和本地记忆节奏。</p>
           </section>
@@ -529,14 +577,19 @@ export function SettingsView() {
             <div className="preview-card settings-preview-card" style={previewStyle}>
               <div className="overlay-backdrop" />
               <div className="overlay-rim" />
-              <div className="preview-tag">preview</div>
-              <div className="overlay-word preview-word">{previewWord.word}</div>
-              <div className="overlay-phonetic">{previewWord.phonetic}</div>
-              <div className="overlay-meaning">{previewWord.meaningZh}</div>
-              <p className="overlay-note">{previewWord.note}</p>
-              <div className="overlay-footer">
-                <span>{formatInterval(draft.intervalMs)}</span>
-                <span>{draft.position}</span>
+              <div className="preview-tag">{draft.displayMode}</div>
+              <div className="overlay-content">
+                <div className="overlay-word preview-word">{previewWord.word}</div>
+                <div className="overlay-phonetic">{previewWord.phonetic}</div>
+                <div className="overlay-meaning is-visible">{previewWord.meaningZh}</div>
+              </div>
+              <div className="overlay-statusline is-visible">
+                <span>{draft.hoverShowButtons ? "悬停显示" : "始终显示"}</span>
+              </div>
+              <div className="overlay-actions is-visible">
+                <button className="overlay-action overlay-action-again" type="button">忘了</button>
+                <button className="overlay-action overlay-action-hard" type="button">模糊</button>
+                <button className="overlay-action overlay-action-good" type="button">认识</button>
               </div>
             </div>
           </section>
@@ -699,6 +752,63 @@ export function SettingsView() {
               </div>
             </section>
 
+            <section className="settings-section" id="settings-card-display">
+              <div className="settings-section-header">
+                <div>
+                  <h3>卡片显示</h3>
+                  <p>控制单词和释义的显示方式以及操作按钮的可见性。</p>
+                </div>
+              </div>
+              <div className="field-grid">
+                <label className="field-row">
+                  <span className="field-copy">
+                    <strong>显示模式</strong>
+                    <small>选择单词和释义的显示方式。</small>
+                  </span>
+                  <select
+                    className="field-select"
+                    onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                      updateDraft("displayMode", event.currentTarget.value as DisplayMode)}
+                    value={draft.displayMode}
+                  >
+                    {DISPLAY_MODE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} · {option.caption}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="toggle-row">
+                  <span>
+                    <strong>悬停显示按钮</strong>
+                    <small>鼠标悬停时才显示"忘了/模糊/认识"按钮，平时隐藏界面更简洁。</small>
+                  </span>
+                  <input
+                    checked={draft.hoverShowButtons}
+                    onChange={(event) => updateDraft("hoverShowButtons", event.currentTarget.checked)}
+                    type="checkbox"
+                  />
+                </label>
+
+                <label className="field-row">
+                  <span className="field-copy">
+                    <strong>释义显示时机</strong>
+                    <small>记忆/测验模式下，释义在卡片停留时间的 {Math.round(draft.revealTiming * 100)}% 后显示。</small>
+                  </span>
+                  <input
+                    className="field-range"
+                    max="1"
+                    min="0.1"
+                    onChange={(event) => updateDraft("revealTiming", Number(event.currentTarget.value))}
+                    step="0.05"
+                    type="range"
+                    value={draft.revealTiming}
+                  />
+                </label>
+              </div>
+            </section>
+
             <section className="settings-section" id="settings-rhythm">
               <div className="settings-section-header">
                 <div>
@@ -771,4 +881,3 @@ export function SettingsView() {
     </main>
   );
 }
-

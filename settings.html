@@ -1,51 +1,41 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-view="settings">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DeskVocab Settings</title>
+    <title>AmbientCard Settings</title>
   </head>
-  <body>
-    <div id="root">
+  <body data-view="settings">
+    <div id="root" style="min-height: 100vh; background: #0d0d0f;">
       <section
         style="
           min-height: 100vh;
-          display: grid;
-          place-items: center;
-          padding: 24px;
-          background:
-            radial-gradient(circle at top, rgba(217, 171, 94, 0.18), transparent 42%),
-            linear-gradient(180deg, #fbf7ef 0%, #f3ecdf 100%);
-          color: #3e2b17;
-          font-family: 'Segoe UI', sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #0d0d0f;
+          color: rgba(255, 255, 255, 0.6);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         "
       >
-        <div style="max-width: 560px">
-          <div
-            style="
-              font-size: 12px;
-              letter-spacing: 0.28em;
-              text-transform: uppercase;
-              opacity: 0.68;
-            "
-          >
-            DeskVocab / Ambient Settings
-          </div>
-          <h1
-            style="
-              margin: 14px 0 10px;
-              font-size: 42px;
-              line-height: 1.05;
-              font-family: 'Georgia', serif;
-              font-weight: 700;
-            "
-          >
-            设置页加载中
-          </h1>
-          <p style="margin: 0; font-size: 15px; line-height: 1.7; opacity: 0.82">
-            如果这个提示长时间不消失，说明设置页初始化失败。关闭窗口后重新打开，或者查看控制台错误信息。
-          </p>
+        <div style="text-align: center;">
+          <div style="
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+          "></div>
+          <div style="font-size: 14px; font-weight: 500;">设置页加载中...</div>
+          <div style="font-size: 12px; opacity: 0.5; margin-top: 8px;">正在读取本地设置、词库和复习状态</div>
         </div>
+        <style>
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        </style>
       </section>
     </div>
     <script type="module" src="/src/settings.tsx"></script>

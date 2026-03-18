@@ -3,9 +3,23 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 #[tauri::command]
 fn open_settings_window(app: AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("settings") {
-        window.show().map_err(|error| error.to_string())?;
-        window.set_focus().map_err(|error| error.to_string())?;
-        return Ok(());
+        match window.is_visible() {
+            Ok(visible) => {
+                if visible {
+                    let _ = window.unminimize();
+                    window.set_focus().map_err(|error| error.to_string())?;
+                    return Ok(());
+                } else {
+                    let _ = window.unminimize();
+                    window.show().map_err(|error| error.to_string())?;
+                    window.set_focus().map_err(|error| error.to_string())?;
+                    return Ok(());
+                }
+            }
+            Err(_) => {
+                let _ = window.close();
+            }
+        }
     }
 
     WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("/settings.html".into()))
@@ -13,6 +27,11 @@ fn open_settings_window(app: AppHandle) -> Result<(), String> {
         .inner_size(1120.0, 760.0)
         .min_inner_size(940.0, 680.0)
         .center()
+        .decorations(false)
+        .resizable(true)
+        .visible(true)
+        .focused(true)
+        .shadow(true)
         .build()
         .map(|_| ())
         .map_err(|error| error.to_string())

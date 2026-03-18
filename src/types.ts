@@ -1,6 +1,7 @@
 export type OverlayPosition = "top-right" | "center-right" | "bottom-right" | "manual";
 export type WordSource = "builtin" | "imported";
 export type ReviewResult = "again" | "hard" | "good";
+export type DisplayMode = "always" | "recall" | "test";
 
 export interface OverlayPoint {
   x: number;
@@ -14,6 +15,10 @@ export interface AppSettings {
   position: OverlayPosition;
   manualPosition: OverlayPoint | null;
   showOnLaunch: boolean;
+  // 新增：显示设置
+  displayMode: DisplayMode; // always: 一直显示全部, recall: 记忆模式, test: 测验模式
+  hoverShowButtons: boolean; // 悬停才显示按钮
+  revealTiming: number; // 显示注释的时机（0-1，0.8表示80%时间后显示）
 }
 
 export interface WordCard {
@@ -95,6 +100,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   position: "center-right",
   manualPosition: null,
   showOnLaunch: true,
+  displayMode: "recall", // 默认使用记忆模式
+  hoverShowButtons: true, // 默认悬停显示按钮
+  revealTiming: 0.7, // 默认70%时间后显示注释
 };
 
 export const INTERVAL_OPTIONS: Option<number>[] = [
@@ -118,15 +126,23 @@ export const REVIEW_RESULT_OPTIONS: Option<ReviewResult>[] = [
   { value: "good", label: "认识", caption: "延长间隔，进入下一轮。" },
 ];
 
+export const DISPLAY_MODE_OPTIONS: Option<DisplayMode>[] = [
+  { value: "always", label: "始终显示", caption: "单词和释义始终同时显示。" },
+  { value: "recall", label: "记忆模式", caption: "已记忆的单词先只显示单词，稍后显示释义；新词始终显示全部。" },
+  { value: "test", label: "测验模式", caption: "所有单词先只显示单词，稍后显示释义。" },
+];
+
 export function normalizeSettings(
   raw?: Partial<AppSettings> | null,
   autostartOverride?: boolean,
 ): AppSettings {
   const allowedIntervals = new Set(INTERVAL_OPTIONS.map((item) => item.value));
   const allowedPositions = new Set(POSITION_OPTIONS.map((item) => item.value));
+  const allowedDisplayModes = new Set(DISPLAY_MODE_OPTIONS.map((item) => item.value));
   const candidate = raw ?? {};
   const candidateInterval = typeof candidate.intervalMs === "number" ? candidate.intervalMs : null;
   const candidatePosition = typeof candidate.position === "string" ? candidate.position : null;
+  const candidateDisplayMode = typeof candidate.displayMode === "string" ? candidate.displayMode : null;
   const candidateManualPosition = candidate.manualPosition;
   const manualPosition =
     candidateManualPosition &&
@@ -152,6 +168,13 @@ export function normalizeSettings(
       : DEFAULT_SETTINGS.position,
     manualPosition,
     showOnLaunch: candidate.showOnLaunch ?? DEFAULT_SETTINGS.showOnLaunch,
+    displayMode: candidateDisplayMode !== null && allowedDisplayModes.has(candidateDisplayMode as DisplayMode)
+      ? (candidateDisplayMode as DisplayMode)
+      : DEFAULT_SETTINGS.displayMode,
+    hoverShowButtons: candidate.hoverShowButtons ?? DEFAULT_SETTINGS.hoverShowButtons,
+    revealTiming: Number.isFinite(candidate.revealTiming)
+      ? Math.min(1, Math.max(0, candidate.revealTiming as number))
+      : DEFAULT_SETTINGS.revealTiming,
   };
 }
 

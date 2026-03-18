@@ -5,8 +5,6 @@ import { loadAppSettings, saveAppSettings } from "../lib/settings";
 import {
   applyReviewResult,
   computeStudySnapshot,
-  formatDueLabel,
-  getStageLabel,
   loadStudyData,
   saveReviewStates,
 } from "../lib/study";
@@ -24,11 +22,12 @@ import {
   REVIEW_RESULT_OPTIONS,
   REVIEW_UPDATED_EVENT,
   SETTINGS_UPDATED_EVENT,
-  formatInterval,
   normalizeSettings,
   type AppSettings,
+  type DisplayMode,
   type ReviewResult,
   type StudyData,
+  type ReviewState,
 } from "../types";
 
 function serializeSettings(settings: AppSettings) {
@@ -46,6 +45,24 @@ function isInteractiveTarget(target: EventTarget | null) {
   }
 
   return Boolean(target.closest("button, input, select, textarea, a, label"));
+}
+
+// 判断是否应该显示释义
+function shouldRevealMeaning(
+  displayMode: DisplayMode,
+  reviewState: ReviewState | null,
+  revealProgress: number,
+  revealTiming: number,
+): boolean {
+  if (displayMode === "always") return true;
+  if (displayMode === "test") return revealProgress >= revealTiming;
+  // recall 模式：新词（seenCount === 0）始终显示，已记忆的词需要等待
+  if (displayMode === "recall") {
+    const isNewWord = !reviewState || reviewState.seenCount === 0;
+    if (isNewWord) return true;
+    return revealProgress >= revealTiming;
+  }
+  return true;
 }
 
 function getOrderedWordPool(studyData: StudyData) {
@@ -100,10 +117,15 @@ export function OverlayView() {
   const [reviewing, setReviewing] = useState<ReviewResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [revealProgress, setRevealProgress] = useState(0); // 0-1 进度
   const settingsRef = useRef(DEFAULT_SETTINGS);
   const currentWordIdRef = useRef<string | null>(null);
   const dragCaptureRef = useRef(false);
   const dragPersistTimerRef = useRef<number | null>(null);
+  const revealTimerRef = useRef<number | null>(null);
+  const revealStartTimeRef = useRef<number>(0);
+  const errorClearTimerRef = useRef<number | null>(null);
 
   const currentWord = useMemo(() => {
     if (!studyData?.activeWords.length) {
@@ -116,6 +138,25 @@ export function OverlayView() {
   const currentReviewState = currentWord && studyData
     ? studyData.reviewStates[currentWord.id]
     : null;
+
+  function showSoftError(scope: string, error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`AmbientCard ${scope} failed:`, error);
+
+    if (errorClearTimerRef.current !== null) {
+      window.clearTimeout(errorClearTimerRef.current);
+    }
+
+    startTransition(() => {
+      setErrorMessage(`${scope}: ${message}`);
+    });
+
+    errorClearTimerRef.current = window.setTimeout(() => {
+      startTransition(() => {
+        setErrorMessage((current) => (current === `${scope}: ${message}` ? null : current));
+      });
+    }, 3600);
+  }
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -131,16 +172,11 @@ export function OverlayView() {
     let isMainWindow = false;
 
     function reportSoftError(scope: string, error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(`DeskVocab ${scope} failed:`, error);
-
       if (!mounted) {
         return;
       }
 
-      startTransition(() => {
-        setErrorMessage(`${scope}: ${message}`);
-      });
+      showSoftError(scope, error);
     }
 
     async function refreshStudy(preferredWordId?: string | null) {
@@ -284,6 +320,12 @@ export function OverlayView() {
       if (dragPersistTimerRef.current !== null) {
         window.clearTimeout(dragPersistTimerRef.current);
       }
+      if (revealTimerRef.current !== null) {
+        window.clearInterval(revealTimerRef.current);
+      }
+      if (errorClearTimerRef.current !== null) {
+        window.clearTimeout(errorClearTimerRef.current);
+      }
       unlistenFns.forEach((unlisten) => {
         void unlisten();
       });
@@ -313,7 +355,7 @@ export function OverlayView() {
           setSettings(nextSettings);
         });
       } catch (error) {
-        console.error("DeskVocab settings sync failed:", error);
+        console.error("AmbientCard settings sync failed:", error);
       }
     }
 
@@ -327,6 +369,7 @@ export function OverlayView() {
     };
   }, []);
 
+  // 卡片切换定时器
   useEffect(() => {
     if (!studyData?.activeWords.length) {
       return;
@@ -340,6 +383,36 @@ export function OverlayView() {
       window.clearInterval(timer);
     };
   }, [settings.intervalMs, studyData]);
+
+  // 释义显示进度动画
+  useEffect(() => {
+    // 切换单词时重置进度
+    setRevealProgress(0);
+    revealStartTimeRef.current = Date.now();
+
+    if (revealTimerRef.current !== null) {
+      window.clearInterval(revealTimerRef.current);
+    }
+
+    const updateInterval = 50; // 50ms 更新一次
+    const timer = window.setInterval(() => {
+      const elapsed = Date.now() - revealStartTimeRef.current;
+      const progress = Math.min(1, elapsed / settings.intervalMs);
+      setRevealProgress(progress);
+
+      if (progress >= 1) {
+        window.clearInterval(timer);
+      }
+    }, updateInterval);
+
+    revealTimerRef.current = timer;
+
+    return () => {
+      if (revealTimerRef.current !== null) {
+        window.clearInterval(revealTimerRef.current);
+      }
+    };
+  }, [currentWordId, settings.intervalMs]);
 
   async function handleReview(result: ReviewResult) {
     if (!studyData || !currentWord || !currentReviewState) {
@@ -371,8 +444,7 @@ export function OverlayView() {
       await saveReviewStates(nextReviewStates);
       await broadcastReviewUpdate();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setErrorMessage(`review save: ${message}`);
+      showSoftError("review save", error);
     } finally {
       setReviewing(null);
     }
@@ -393,8 +465,7 @@ export function OverlayView() {
     } catch (error) {
       dragCaptureRef.current = false;
       setDragging(false);
-      const message = error instanceof Error ? error.message : String(error);
-      setErrorMessage(`window drag: ${message}`);
+      showSoftError("window drag", error);
     }
   }
 
@@ -426,17 +497,17 @@ export function OverlayView() {
           className={`overlay-card overlay-empty overlay-card-draggable${dragging ? " overlay-card-dragging" : ""}`}
           onContextMenu={(event) => void handleCardContextMenu(event)}
           onMouseDown={(event) => void handleCardMouseDown(event)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           style={overlayStyle}
           title="左键拖动，右键打开设置"
         >
           <div className="overlay-backdrop" />
           <div className="overlay-rim" />
-          <div className="overlay-meta">
-            <span>DeskVocab</span>
-            <span>{formatInterval(settings.intervalMs)} · {Math.round(settings.opacity * 100)}%</span>
+          <div className="overlay-content">
+            <div className="overlay-word">Import Words</div>
+            <div className="overlay-meaning is-visible">还没有可用词库</div>
           </div>
-          <div className="overlay-word">Import Words</div>
-          <div className="overlay-meaning">还没有可用词库</div>
           <div className="overlay-actions overlay-actions-single">
             <button className="overlay-action overlay-action-settings" onClick={() => void openSettingsWindow()} type="button">
               打开设置
@@ -448,36 +519,38 @@ export function OverlayView() {
     );
   }
 
+  const shouldShowMeaning = shouldRevealMeaning(
+    settings.displayMode,
+    currentReviewState,
+    revealProgress,
+    settings.revealTiming,
+  );
+
   return (
     <main className="overlay-stage">
       <section
         key={`${currentWord.id}-${currentReviewState.lastReviewedAt ?? "initial"}`}
         aria-live="polite"
-        className={`overlay-card overlay-card-draggable${dragging ? " overlay-card-dragging" : ""}`}
+        className={`overlay-card overlay-card-draggable${dragging ? " overlay-card-dragging" : ""}${isHovered ? " is-hovered" : ""}`}
         onContextMenu={(event) => void handleCardContextMenu(event)}
         onMouseDown={(event) => void handleCardMouseDown(event)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         style={overlayStyle}
         title="左键拖动，右键打开设置"
       >
         <div className="overlay-backdrop" />
         <div className="overlay-rim" />
-        <div className="overlay-progress" />
 
-        <div className="overlay-meta">
-          <span>{studyData.usingCustomLibrary ? "CUSTOM LIBRARY" : "STARTER LIBRARY"}</span>
-          <span>{formatInterval(settings.intervalMs)} · {Math.round(settings.opacity * 100)}%</span>
+        <div className="overlay-content">
+          <div className="overlay-word">{currentWord.word}</div>
+          <div className="overlay-progress" style={{ transform: `scaleX(${revealProgress})` }} />
+          <div className={`overlay-meaning${shouldShowMeaning ? " is-visible" : ""}`}>
+            {currentWord.meaningZh}
+          </div>
         </div>
 
-        <div className="overlay-word">{currentWord.word}</div>
-        {currentWord.phonetic ? <div className="overlay-phonetic">{currentWord.phonetic}</div> : null}
-        <div className="overlay-meaning">{currentWord.meaningZh}</div>
-
-        <div className="overlay-statusline">
-          <span>{getStageLabel(currentReviewState.stage)}</span>
-          <span>{formatDueLabel(currentReviewState.dueAt)}</span>
-        </div>
-
-        <div className="overlay-actions">
+        <div className={`overlay-actions${settings.hoverShowButtons ? "" : " is-visible"}`}>
           {REVIEW_RESULT_OPTIONS.map((option) => (
             <button
               key={option.value}
@@ -487,11 +560,10 @@ export function OverlayView() {
               title={option.caption.trim()}
               type="button"
             >
-              {reviewing === option.value ? "处理中..." : option.label}
+              {reviewing === option.value ? "..." : option.label}
             </button>
           ))}
         </div>
-
         {errorMessage ? <p className="overlay-diagnostic">{errorMessage}</p> : null}
       </section>
     </main>

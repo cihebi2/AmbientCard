@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for DeskVocab windows",
+  "description": "Capability for AmbientCard windows",
   "windows": ["main", "settings"],
   "permissions": [
     "core:default",

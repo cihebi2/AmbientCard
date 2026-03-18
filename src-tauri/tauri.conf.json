@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "AmbientCard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.cihebi2.ambientcard",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -14,10 +14,12 @@
       {
         "label": "main",
         "title": "AmbientCard",
-        "width": 396,
-        "height": 236,
-        "minWidth": 396,
-        "minHeight": 236,
+        "width": 220,
+        "height": 130,
+        "minWidth": 200,
+        "minHeight": 120,
+        "maxWidth": 260,
+        "maxHeight": 160,
         "visible": true,
         "transparent": true,
         "decorations": false,

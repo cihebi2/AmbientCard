@@ -115,7 +115,7 @@ export async function ensureSystemTray() {
         },
         {
           id: "quit",
-          text: "退出 DeskVocab",
+            text: "退出 AmbientCard",
           action: () => {
             void closeApplication();
           },
@@ -123,13 +123,18 @@ export async function ensureSystemTray() {
       ],
     });
 
-    const icon = await defaultWindowIcon();
+    let icon = null;
+    try {
+      icon = await defaultWindowIcon();
+    } catch (error) {
+      console.warn("AmbientCard tray icon load failed:", error);
+    }
 
     await TrayIcon.new({
       id: TRAY_ID,
       menu,
       icon: icon ?? undefined,
-      tooltip: "DeskVocab",
+        tooltip: "AmbientCard",
       showMenuOnLeftClick: false,
       action: (event) => {
         if (event.type === "Click" && event.button === "Left" && event.buttonState === "Up") {
@@ -137,7 +142,11 @@ export async function ensureSystemTray() {
         }
       },
     });
-  })();
+  })().catch((error) => {
+    trayReady = null;
+    console.error("AmbientCard tray bootstrap failed:", error);
+    throw error;
+  });
 
   return trayReady;
 }
